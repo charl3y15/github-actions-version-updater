@@ -92,6 +92,3 @@ inputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  pre_steps:
-    - name: Configure Git Safe Directory
-      run: git config --global --add safe.directory /github/workspace

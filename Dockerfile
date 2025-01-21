@@ -19,7 +19,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
-WORKDIR /app
+WORKDIR /github/workspace
+
+# Configure Git safe directory
+RUN git config --global --add safe.directory /github/workspace
 
 # Copy and install Python requirements
 COPY requirements.txt .
