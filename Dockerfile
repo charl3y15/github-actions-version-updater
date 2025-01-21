@@ -11,19 +11,35 @@ LABEL "maintainer"="saadmk11"
 
 RUN apt-get update \
     && apt-get install \
-       -y \
-       --no-install-recommends \
-       --no-install-suggests \
-       git \
+    -y \
+    --no-install-recommends \
+    --no-install-suggests \
+    git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ./requirements.txt .
+# Set working directory
+WORKDIR /app
 
+# Copy and install Python requirements
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . ./app
+# Copy source code
+COPY src /app/src/
+RUN touch /app/src/__init__.py
 
-ENV PYTHONPATH "${PYTHONPATH}:/app"
+# Set environment variables
+ENV PYTHONPATH "/app"
 
-CMD ["python", "-m", "src.main"]
+# Add additional debug information
+RUN python -c "import sys; import os; print('Python path:', sys.path); print('Contents:', os.listdir('.')); print('Src contents:', os.listdir('src'));"
+
+# Copy Dockerfile Updater scripts
+COPY dockerfile-updater-main/action /action/
+
+# Make shell script executable
+RUN chmod +x /action/run.sh
+
+# Set entrypoint to the combined run script
+CMD ["bash", "/action/run.sh"]

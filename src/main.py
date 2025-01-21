@@ -8,15 +8,15 @@ import requests
 import yaml
 from packaging.version import LegacyVersion, Version, parse
 
-from .config import ActionEnvironment, Configuration, ReleaseType, UpdateVersionWith
-from .run_git import (
+from src.config import ActionEnvironment, Configuration, ReleaseType, UpdateVersionWith
+from src.run_git import (
     configure_git_author,
     configure_safe_directory,
     create_new_git_branch,
     git_commit_changes,
     git_has_changes,
 )
-from .utils import (
+from src.utils import (
     add_git_diff_to_job_summary,
     add_pull_request_labels,
     add_pull_request_reviewers,

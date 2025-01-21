@@ -2,8 +2,8 @@ name: GitHub Actions Version Updater
 description: GitHub Actions Version Updater updates GitHub Action versions in a repository and creates a pull request with the changes.
 author: Maksudul Haque
 branding:
-  icon: 'upload-cloud'
-  color: 'green'
+  icon: 'arrow-up'
+  color: 'orange'
 inputs:
   committer_username:
     description: 'Name of the user who will commit the changes to GitHub'
@@ -60,6 +60,34 @@ inputs:
     description: 'A comma separated string of file or directory paths to look for workflows. By default, only the workflow files in the .github/workflows directory are checked updates'
     required: false
     default: ''
+  pr_title:
+    description: "The title of the PR's this action creates."
+    required: false
+    default: 'Dockerfile updates 🎉'
+  dockerfile_name:
+    description: "This action run on all files that contains this value."
+    required: false
+    default: 'dockerfile'
+  exclude_type:
+    description: "A comma separated string of types you don't want to check."
+    required: false
+    default: ''
+  exclude_package:
+    description: "A comma separated string of packages you don't want to check."
+    required: false
+    default: ''
+  commit_msg:
+    description: "The string used in commit messages."
+    required: false
+    default: 'Update [package] from [from_version] to [to_version]'
+  args:
+    description: "A comma separated string of ARG key/value pairs."
+    required: false
+    default: ''
+  disable_pr:
+    description: "Disables auto creation of Pull Request. Setting it to anything will do, except false"
+    required: false
+    default: 'false'
 
 runs:
   using: 'docker'
