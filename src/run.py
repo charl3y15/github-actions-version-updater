@@ -1,5 +1,4 @@
-﻿
-import os
+﻿import os
 import glob
 from .config import Config
 from .dockerfile import Dockerfile
@@ -24,6 +23,11 @@ if config.exclude_type:
 
 if config.exclude_package:
     print(f"Skipping {config.exclude_package}")
+
+def run_git_commands():
+    # Add Git safe directory configuration
+    os.system("git config --global --add safe.directory /github/workspace")
+    # ...existing Git commands...
 
 for filepath in sorted(dockerfiles):
     if os.path.isdir(filepath):

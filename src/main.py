@@ -474,28 +474,32 @@ class GitHubActionsVersionUpdater:
                 yield from self._get_all_actions(element)
 
 
-if __name__ == "__main__":
-    with gha_utils.group("Parse Configuration"):
-        user_configuration = Configuration()
-        action_environment = ActionEnvironment()
+def main():
+    # Add Git safe directory configuration
+    os.system("git config --global --add safe.directory /github/workspace")
 
-        gha_utils.echo("Using Configuration:")
-        gha_utils.echo(user_configuration.model_dump_json(exclude={"token"}, indent=4))
+    if __name__ == "__main__":
+        with gha_utils.group("Parse Configuration"):
+            user_configuration = Configuration()
+            action_environment = ActionEnvironment()
 
-    # Configure Git Safe Directory
-    configure_safe_directory(action_environment.workspace)
+            gha_utils.echo("Using Configuration:")
+            gha_utils.echo(user_configuration.model_dump_json(exclude={"token"}, indent=4))
 
-    # Configure Git Author
-    configure_git_author(
-        user_configuration.committer_username,
-        user_configuration.committer_email,
-    )
+        # Configure Git Safe Directory
+        configure_safe_directory(action_environment.workspace)
 
-    with gha_utils.group("Run GitHub Actions Version Updater"):
-        actions_version_updater = GitHubActionsVersionUpdater(
-            action_environment,
-            user_configuration,
+        # Configure Git Author
+        configure_git_author(
+            user_configuration.committer_username,
+            user_configuration.committer_email,
         )
-        actions_version_updater.run()
 
-    display_whats_new()
+        with gha_utils.group("Run GitHub Actions Version Updater"):
+            actions_version_updater = GitHubActionsVersionUpdater(
+                action_environment,
+                user_configuration,
+            )
+            actions_version_updater.run()
+
+        display_whats_new()
