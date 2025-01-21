@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: 📦 Install requirements
+        run: |
+          python3 -m pip install setuptools wheel
+          python3 -m pip install -r requirements.txt
+
+      - name: 🏃 Run the tests
+        run: python3 -m pytest -v
+
+  run:
+    name: Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: 🏃 Run the action
+        uses: ./
+        with:
+          disable_pr: True
+
+      - name: ✅ Check the output
+        run: |
+          if [ -z "$(cat ./changes | grep 'Update alpine')" ]; then
+            exit 1
+          fi

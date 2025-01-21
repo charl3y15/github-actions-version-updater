@@ -1,0 +1,8 @@
+__pycache__
+env
+test
+Testfiles
+.pytest_cache
+settings.json
+changes
+somerandomstringthatdoesnotexsist
