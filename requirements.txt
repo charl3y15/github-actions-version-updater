@@ -16,7 +16,7 @@ charset-normalizer
 idna
 packaging
 pydantic
-pydantic-core# via pydantic
+pydantic-core
 pydantic-settings
 pyparsing
 python-dotenv
