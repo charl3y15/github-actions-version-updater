@@ -4,6 +4,12 @@
 #
 #    pip-compile --generate-hashes --output-file=requirements.txt requirements.in
 #
+pytest
+requests
+alpinepkgs
+pygithub
+dockerfile-parse
+awesomeversion
 annotated-types==0.5.0 \
     --hash=sha256:47cdc3490d9ac1506ce92c7aaa76c579dc3509ff11e098fc867e5130ab7be802 \
     --hash=sha256:58da39888f92c276ad970249761ebea80ba544b77acddaa1a4d6cf78287d45fd
