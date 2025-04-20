@@ -20,13 +20,13 @@ jobs:
       # Checkout the repository
       - uses: actions/checkout@v4.2.2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
 
       # Run GitHub Actions Version Updater from your fork
       - name: Run GitHub Actions Version Updater
         uses: charl3y15/github-actions-version-updater@main #add-Docker-update
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
           skip_pull_request: "false"
           update_version_with: "release-tag"
           release_types: "all"
