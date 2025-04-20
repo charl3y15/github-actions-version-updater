@@ -210,12 +210,20 @@ class GitHubActionsVersionUpdater:
                 f"on {version_data['commit_date']}\n"
             )
         else:
-            return (
-                f"{start} added a new "
-                f"**[commit]({version_data['commit_url']})** to "
-                f"**[{version_data['branch_name']}]({version_data['branch_url']})** "
-                f"branch on {version_data['commit_date']}\n"
-            )
+            # Handle branch commits
+            if 'branch_name' in version_data:
+                return (
+                    f"{start} added a new "
+                    f"**[commit]({version_data['commit_url']})** to "
+                    f"**[{version_data['branch_name']}]({version_data['branch_url']})** "
+                    f"branch on {version_data['commit_date']}\n"
+                )
+            else:
+                return (
+                    f"{start} added a new "
+                    f"**[commit]({version_data['commit_url']})** on "
+                    f"{version_data['commit_date']}\n"
+                )
 
     def _clean_version_tag(self, version_tag: str) -> str:
         """Clean version tag to make it compatible with packaging.version.parse"""
