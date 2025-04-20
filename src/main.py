@@ -193,37 +193,29 @@ class GitHubActionsVersionUpdater:
         """Generate pull request body line for pull request body"""
         start = f"* **[{action_repository}]({self.github_url}{action_repository})**"
 
-        # Handle branch commits first
-        if 'branch_name' in version_data:
+        if self.user_config.update_version_with == UpdateVersionWith.LATEST_RELEASE_TAG:
+            return (
+                f"{start} published a new release "
+                f"**[{version_data['tag_name']}]({version_data['html_url']})** "
+                f"on {version_data['published_at']}\n"
+            )
+        elif (
+            self.user_config.update_version_with
+            == UpdateVersionWith.LATEST_RELEASE_COMMIT_SHA
+        ):
+            return (
+                f"{start} added a new "
+                f"**[commit]({version_data['commit_url']})** to "
+                f"**[{version_data['tag_name']}]({version_data['html_url']})** Tag "
+                f"on {version_data['commit_date']}\n"
+            )
+        else:
             return (
                 f"{start} added a new "
                 f"**[commit]({version_data['commit_url']})** to "
                 f"**[{version_data['branch_name']}]({version_data['branch_url']})** "
                 f"branch on {version_data['commit_date']}\n"
             )
-
-        # Handle release tags and commit SHAs
-        if 'tag_name' in version_data:
-            if self.user_config.update_version_with == UpdateVersionWith.LATEST_RELEASE_TAG:
-                return (
-                    f"{start} published a new release "
-                    f"**[{version_data['tag_name']}]({version_data['html_url']})** "
-                    f"on {version_data['published_at']}\n"
-                )
-            else:
-                return (
-                    f"{start} added a new "
-                    f"**[commit]({version_data['commit_url']})** to "
-                    f"**[{version_data['tag_name']}]({version_data['html_url']})** Tag "
-                    f"on {version_data['commit_date']}\n"
-                )
-
-        # Fallback for simple commit updates
-        return (
-            f"{start} added a new "
-            f"**[commit]({version_data['commit_url']})** on "
-            f"{version_data['commit_date']}\n"
-        )
 
     def _clean_version_tag(self, version_tag: str) -> str:
         """Clean version tag to make it compatible with packaging.version.parse"""
@@ -395,34 +387,13 @@ class GitHubActionsVersionUpdater:
         )
         return None
 
+    # flake8: noqa: B019
     @cache
     def _get_new_version(
         self, action_repository: str, current_version: str
     ) -> tuple[str | None, dict[str, str]]:
         """Get the new version for the action"""
         gha_utils.echo(f'Checking "{action_repository}" for updates...')
-
-        # Handle branch names like 'main' or 'master'
-        if current_version.lower() in ['main', 'master']:
-            gha_utils.notice(
-                f"Action `{action_repository}` is using branch `{current_version}`. "
-                "Getting latest commit SHA from branch."
-            )
-            branch_commit_data = self._get_commit_data(
-                action_repository, current_version
-            )
-
-            if not branch_commit_data:
-                return None, {}
-
-            return branch_commit_data["commit_sha"], {
-                "branch_name": current_version,
-                "branch_url": (
-                    f"{self.github_url}{action_repository}"
-                    f"/tree/{current_version}"
-                ),
-                **branch_commit_data,
-            }
 
         if self.user_config.update_version_with == UpdateVersionWith.LATEST_RELEASE_TAG:
             latest_release_data = self._get_latest_version_release(
