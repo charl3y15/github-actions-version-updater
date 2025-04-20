@@ -1,12 +1,13 @@
-name: GitHub Actions Version Updater Test
+name: GitHub Actions Version Updater - My Version
 
 on:
   workflow_dispatch: # Manual trigger
-  schedule:          # Automatically run every Sunday
+  schedule: # Automatically run every Sunday
     - cron: "0 0 * * 0"
 
-permissions:
-  actions: write
+#permissions:
+#  actions: write
+permissions: write-all
 
 jobs:
   build:
@@ -16,7 +17,7 @@ jobs:
       # Checkout the repository
       - uses: actions/checkout@v4.2.2
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Run GitHub Actions Version Updater from your fork
       - name: Run GitHub Actions Version Updater
