@@ -193,37 +193,37 @@ class GitHubActionsVersionUpdater:
         """Generate pull request body line for pull request body"""
         start = f"* **[{action_repository}]({self.github_url}{action_repository})**"
 
-        if self.user_config.update_version_with == UpdateVersionWith.LATEST_RELEASE_TAG:
-            return (
-                f"{start} published a new release "
-                f"**[{version_data['tag_name']}]({version_data['html_url']})** "
-                f"on {version_data['published_at']}\n"
-            )
-        elif (
-            self.user_config.update_version_with
-            == UpdateVersionWith.LATEST_RELEASE_COMMIT_SHA
-        ):
+        # Handle branch commits first
+        if 'branch_name' in version_data:
             return (
                 f"{start} added a new "
                 f"**[commit]({version_data['commit_url']})** to "
-                f"**[{version_data['tag_name']}]({version_data['html_url']})** Tag "
-                f"on {version_data['commit_date']}\n"
+                f"**[{version_data['branch_name']}]({version_data['branch_url']})** "
+                f"branch on {version_data['commit_date']}\n"
             )
-        else:
-            # Handle branch commits
-            if 'branch_name' in version_data:
+
+        # Handle release tags and commit SHAs
+        if 'tag_name' in version_data:
+            if self.user_config.update_version_with == UpdateVersionWith.LATEST_RELEASE_TAG:
                 return (
-                    f"{start} added a new "
-                    f"**[commit]({version_data['commit_url']})** to "
-                    f"**[{version_data['branch_name']}]({version_data['branch_url']})** "
-                    f"branch on {version_data['commit_date']}\n"
+                    f"{start} published a new release "
+                    f"**[{version_data['tag_name']}]({version_data['html_url']})** "
+                    f"on {version_data['published_at']}\n"
                 )
             else:
                 return (
                     f"{start} added a new "
-                    f"**[commit]({version_data['commit_url']})** on "
-                    f"{version_data['commit_date']}\n"
+                    f"**[commit]({version_data['commit_url']})** to "
+                    f"**[{version_data['tag_name']}]({version_data['html_url']})** Tag "
+                    f"on {version_data['commit_date']}\n"
                 )
+
+        # Fallback for simple commit updates
+        return (
+            f"{start} added a new "
+            f"**[commit]({version_data['commit_url']})** on "
+            f"{version_data['commit_date']}\n"
+        )
 
     def _clean_version_tag(self, version_tag: str) -> str:
         """Clean version tag to make it compatible with packaging.version.parse"""
