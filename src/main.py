@@ -387,13 +387,34 @@ class GitHubActionsVersionUpdater:
         )
         return None
 
-    # flake8: noqa: B019
     @cache
     def _get_new_version(
         self, action_repository: str, current_version: str
     ) -> tuple[str | None, dict[str, str]]:
         """Get the new version for the action"""
         gha_utils.echo(f'Checking "{action_repository}" for updates...')
+
+        # Handle branch names like 'main' or 'master'
+        if current_version.lower() in ['main', 'master']:
+            gha_utils.notice(
+                f"Action `{action_repository}` is using branch `{current_version}`. "
+                "Getting latest commit SHA from branch."
+            )
+            branch_commit_data = self._get_commit_data(
+                action_repository, current_version
+            )
+
+            if not branch_commit_data:
+                return None, {}
+
+            return branch_commit_data["commit_sha"], {
+                "branch_name": current_version,
+                "branch_url": (
+                    f"{self.github_url}{action_repository}"
+                    f"/tree/{current_version}"
+                ),
+                **branch_commit_data,
+            }
 
         if self.user_config.update_version_with == UpdateVersionWith.LATEST_RELEASE_TAG:
             latest_release_data = self._get_latest_version_release(
