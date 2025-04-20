@@ -27,6 +27,4 @@ RUN touch /app/src/__init__.py
 
 ENV PYTHONPATH "/app"
 
-RUN python -c "import sys; import os; print('Python path:', sys.path); print('Contents:', os.listdir('.')); print('Src contents:', os.listdir('src')); print('Try import:', __import__('src.main'))"
-
 CMD ["python", "/app/src/main.py"]
