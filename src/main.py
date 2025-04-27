@@ -6,7 +6,7 @@ from typing import Any
 import github_action_utils as gha_utils  # type: ignore
 import requests
 import yaml
-from packaging.version import Version, parse
+from packaging.version import Version, parse, InvalidVersion
 
 from src.config import ActionEnvironment, Configuration, ReleaseType, UpdateVersionWith
 from src.run_git import (
@@ -306,7 +306,22 @@ class GitHubActionsVersionUpdater:
         if not github_releases:
             return latest_release
 
-        parsed_current_version: Version = parse(current_version)
+        # Check if current_version is a branch name (e.g. 'main', 'master')
+        if current_version in ['main', 'master'] or not current_version.startswith('v'):
+            gha_utils.notice(
+                f"Current version '{current_version}' appears to be a branch reference. "
+                "Using latest release for comparison."
+            )
+            return github_releases[0]
+
+        try:
+            parsed_current_version: Version = parse(current_version)
+        except InvalidVersion:
+            gha_utils.notice(
+                f"Could not parse version '{current_version}' of '{action_repository}'. "
+                "Using latest release for comparison."
+            )
+            return github_releases[0]
 
         if not parsed_current_version.release:
             gha_utils.notice(
