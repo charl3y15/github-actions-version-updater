@@ -8,6 +8,9 @@ on:
     # Automatically run once every month
     - cron:  '0 0 1 * *'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
