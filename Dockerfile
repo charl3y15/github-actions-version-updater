@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.15-rc-alpine
 
 LABEL "com.github.actions.name"="GitHub Actions Version Updater"
 LABEL "com.github.actions.description"="GitHub Actions Version Updater updates GitHub Action versions in a repository and creates a pull request with the changes."
