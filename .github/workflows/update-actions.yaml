@@ -8,21 +8,25 @@ on:
     # Automatically run once every month
     - cron:  '0 0 1 * *'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.2.2
         with:
           # [Required] Access token with `workflow` scope.
           token: ${{ secrets.WORKFLOW_SECRET }}
 
       - name: Run GitHub Actions Version Updater
-        uses: saadmk11/github-actions-version-updater@main
+        uses: charl3y15/github-actions-version-updater@1.0
         with:
           # [Required] Access token with `workflow` scope.
           token: ${{ secrets.WORKFLOW_SECRET }}
           update_version_with: "release-tag"
           release_types: "major"
+          pull_request_labels: "dependencies, automated"
           ignore: 'saadmk11/github-actions-version-updater@main'

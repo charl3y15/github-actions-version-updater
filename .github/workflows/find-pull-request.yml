@@ -1,0 +1,47 @@
+name: Find, Approve and Merge Pull Requests
+on:
+  - pull_request
+  - workflow_dispatch
+permissions:
+    issues: write
+    pull-requests: write
+    contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      - name: Find Pull Request
+        uses: juliangruber/find-pull-request-action@v1.9.0
+        id: find-pull-request
+        with:
+         # base: main
+       #   author: charl3y15
+          state: open
+          repo: ${{ github.repository }}
+          sort: created
+          direction: desc
+          labels: automated
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "Pull Request ${{ steps.find-pull-request.outputs.number }} (${{ steps.find-pull-request.outputs.head-sha }})"
+        env:
+          number: ${{ steps.find-pull-request.outputs.number }}
+          sha: ${{ steps.find-pull-request.outputs.head-sha }}
+          title: ${{ steps.find-pull-request.outputs.title }}
+          base-repo: ${{ steps.find-pull-request.outputs.base-repo }}
+      - name: Approve Pull Request
+        if: steps.find-pull-request.outputs.number != ''
+        uses: juliangruber/approve-pull-request-action@v2.0.6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          number: ${{ steps.find-pull-request.outputs.number }}
+          repo: ${{ github.repository }}
+      - name: Merge Pull Request
+        if: steps.find-pull-request.outputs.number != ''
+        uses: juliangruber/merge-pull-request-action@v1.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          number: ${{ steps.find-pull-request.outputs.number }}
+          method: merge
+         # repo: juliangruber/octokit-action

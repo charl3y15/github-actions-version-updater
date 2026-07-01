@@ -6,17 +6,17 @@ from typing import Any
 import github_action_utils as gha_utils  # type: ignore
 import requests
 import yaml
-from packaging.version import LegacyVersion, Version, parse
+from packaging.version import Version, parse, InvalidVersion
 
-from .config import ActionEnvironment, Configuration, ReleaseType, UpdateVersionWith
-from .run_git import (
+from src.config import ActionEnvironment, Configuration, ReleaseType, UpdateVersionWith
+from src.run_git import (
     configure_git_author,
     configure_safe_directory,
     create_new_git_branch,
     git_commit_changes,
     git_has_changes,
 )
-from .utils import (
+from src.utils import (
     add_git_diff_to_job_summary,
     add_pull_request_labels,
     add_pull_request_reviewers,
@@ -153,7 +153,7 @@ class GitHubActionsVersionUpdater:
                     )
 
                     if not new_version:
-                        gha_utils.warning(
+                        gha_utils.notice(
                             f"Could not find any new version for {action}. Skipping..."
                         )
                         continue
@@ -171,11 +171,10 @@ class GitHubActionsVersionUpdater:
                             f'Updating "{action}" with "{updated_action}"...'
                         )
                         updated_workflow_data = re.sub(
-                            rf"({action})(\s+['\"]?|['\"]?$)",
-                            rf"{updated_action}\2",
-                            updated_workflow_data,
-                            0,
-                            re.MULTILINE,
+                            pattern=rf"({action})(\s+['\"]?|['\"]?$)",
+                            repl=rf"{updated_action}\2",
+                            string=updated_workflow_data,
+                            flags=re.MULTILINE,
                         )
                     else:
                         gha_utils.echo(f'No updates found for "{action_repository}"')
@@ -218,10 +217,18 @@ class GitHubActionsVersionUpdater:
                 f"branch on {version_data['commit_date']}\n"
             )
 
-    def _get_github_releases(
-        self, action_repository: str
-    ) -> list[dict[str, str | Version | LegacyVersion]]:
-        """Get the GitHub releases using GitHub API"""
+    def _clean_version_tag(self, version_tag: str) -> str:
+        """Clean version tag to make it compatible with packaging.version.parse"""
+        # Remove 'v' prefix if present
+        if version_tag.startswith('v'):
+            version_tag = version_tag[1:]
+
+        # Remove any extra information after the version number (e.g., -node20, -beta, etc.)
+        version_parts = version_tag.split('-')
+        return version_parts[0]
+
+    def _get_github_releases(self, action_repository: str) -> list[dict[str, Any]]:
+        """Get GitHub releases for an action"""
         url = f"{self.github_api_url}/repos/{action_repository}/releases?per_page=50"
 
         response = requests.get(
@@ -237,7 +244,7 @@ class GitHubActionsVersionUpdater:
                         "published_at": release["published_at"],
                         "html_url": release["html_url"],
                         "tag_name": release["tag_name"],
-                        "tag_name_parsed": parse(release["tag_name"]),
+                        "tag_name_parsed": parse(self._clean_version_tag(release["tag_name"])),
                     }
                     for release in response_data
                     if not release["prerelease"]
@@ -249,7 +256,7 @@ class GitHubActionsVersionUpdater:
                     reverse=True,
                 )
 
-        gha_utils.warning(
+        gha_utils.notice(
             f"Could not find any release for "
             f'"{action_repository}", GitHub API Response: {response.json()}'
         )
@@ -283,7 +290,7 @@ class GitHubActionsVersionUpdater:
             )
 
         def filter_func(
-            release_tag: LegacyVersion | Version, current_version: Version
+            release_tag: Version, current_version: Version
         ) -> bool:
             return any(check(release_tag, current_version) for check in checks)
 
@@ -299,13 +306,27 @@ class GitHubActionsVersionUpdater:
         if not github_releases:
             return latest_release
 
-        parsed_current_version: LegacyVersion | Version = parse(current_version)
+        # Check if current_version is a branch name (e.g. 'main', 'master')
+        if current_version in ['main', 'master'] or not current_version.startswith('v'):
+            gha_utils.notice(
+                f"Current version '{current_version}' appears to be a branch reference. "
+                "Using latest release for comparison."
+            )
+            return github_releases[0]
 
-        if isinstance(parsed_current_version, LegacyVersion):
-            gha_utils.warning(
-                f"Current version (`{current_version}`) of `{action_repository}` does not follow "
-                "Semantic Versioning specification. This can yield unexpected results, "
-                "please be careful while using the updates suggested by this action."
+        try:
+            parsed_current_version: Version = parse(current_version)
+        except InvalidVersion:
+            gha_utils.notice(
+                f"Could not parse version '{current_version}' of '{action_repository}'. "
+                "Using latest release for comparison."
+            )
+            return github_releases[0]
+
+        if not parsed_current_version.release:
+            gha_utils.notice(
+                f"Parsing failed for `{current_version}` of `{action_repository}`, "
+                "falling back to latest release."
             )
             latest_release = github_releases[0]
         else:
@@ -321,11 +342,18 @@ class GitHubActionsVersionUpdater:
                 )
             except AttributeError:
                 latest_release = github_releases[0]
-                gha_utils.warning(
+                gha_utils.notice(
                     f"GitHub releases of `{action_repository}` does not follow "
                     "Semantic Versioning specification. This can yield unexpected results, "
                     "please be careful while using the updates suggested by this action."
                 )
+
+            if not latest_release:
+                gha_utils.notice(
+                    f"No strict match found for `{current_version}` of "
+                    f"`{action_repository}`, using newest available release."
+                )
+                latest_release = github_releases[0]
 
         return latest_release
 
@@ -351,7 +379,7 @@ class GitHubActionsVersionUpdater:
                 "commit_date": response_data["commit"]["author"]["date"],
             }
 
-        gha_utils.warning(
+        gha_utils.notice(
             f"Could not find commit data for tag/branch {tag_or_branch_name} on "
             f'"{action_repository}", GitHub API Response: {response.json()}'
         )
@@ -368,7 +396,7 @@ class GitHubActionsVersionUpdater:
         if response.status_code == 200:
             return response.json()["default_branch"]
 
-        gha_utils.warning(
+        gha_utils.notice(
             f"Could not find default branch for "
             f'"{action_repository}", GitHub API Response: {response.json()}'
         )
